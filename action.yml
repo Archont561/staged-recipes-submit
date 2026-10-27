@@ -1,0 +1,110 @@
+name: staged-recipes-submit
+description: Validate conda recipes and open a pull request against conda-forge/staged-recipes.
+author: Archont561
+branding:
+  icon: package
+  color: green
+
+# The action runs the scripts in this repository directly. There is no package to publish, no
+# wheel to download and no release asset to verify: the tag (or commit SHA) you pin in `uses:`
+# *is* the version of the code that runs. `scripts/run.py` is the same dispatcher contributors
+# use locally, so the action cannot drift from the documented workflow.
+inputs:
+  recipes:
+    description: >-
+      Newline- or comma-separated recipe paths. Each path is a directory containing
+      recipe.yaml or meta.yaml, or the recipe file itself.
+    required: true
+  fork:
+    description: Destination fork as owner/repo, for example "octocat/staged-recipes".
+    required: true
+  github-token:
+    description: >-
+      Token with contents:write and pull_requests:write on the fork. Pass
+      ${{ secrets.GITHUB_TOKEN }} for a fork inside the same repository, or a
+      fine-grained token scoped to the fork.
+    required: true
+  dry-run:
+    description: Validate and print the plan without any remote write.
+    required: false
+    default: "false"
+  title:
+    description: Pull-request title. Derived from the package names when empty.
+    required: false
+    default: ""
+  description:
+    description: Pull-request description. Derived when empty.
+    required: false
+    default: ""
+  mode:
+    description: "single (one pull request for all recipes) or per-recipe (one pull request each)."
+    required: false
+    default: "single"
+  branch-prefix:
+    description: Prefix for submission branch names.
+    required: false
+    default: "submit"
+  upstream:
+    description: Upstream repository.
+    required: false
+    default: "conda-forge/staged-recipes"
+  base-branch:
+    description: Base branch of the pull request.
+    required: false
+    default: "main"
+  python-version:
+    description: Python used to run the action.
+    required: false
+    default: "3.13"
+
+outputs:
+  pull-request-urls:
+    description: Newline-separated pull-request URLs created or reused by this run.
+    value: ${{ steps.submit.outputs.pull-request-urls }}
+  branches:
+    description: Newline-separated submission branch names.
+    value: ${{ steps.submit.outputs.branches }}
+  report:
+    description: JSON report of the run.
+    value: ${{ steps.submit.outputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install Python
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install the runtime dependency
+      shell: bash
+      # The only third-party import. Pinned exactly here and required with a lower bound in
+      # pyproject.toml; `pixi run validate` refuses drift between the two.
+      run: python -m pip install --disable-pip-version-check --no-input --quiet "pyyaml==6.0.2"
+
+    - name: Submit recipes
+      id: submit
+      shell: bash
+      env:
+        # Inputs travel through the environment: no token ever appears on a command line.
+        PYTHONPATH: ${{ github.action_path }}
+        ACTION_PATH: ${{ github.action_path }}
+        INPUT_RECIPES: ${{ inputs.recipes }}
+        INPUT_FORK: ${{ inputs.fork }}
+        INPUT_TOKEN: ${{ inputs.github-token }}
+        INPUT_DRY_RUN: ${{ inputs.dry-run }}
+        INPUT_TITLE: ${{ inputs.title }}
+        INPUT_DESCRIPTION: ${{ inputs.description }}
+        INPUT_MODE: ${{ inputs.mode }}
+        INPUT_BRANCH_PREFIX: ${{ inputs.branch-prefix }}
+        INPUT_UPSTREAM: ${{ inputs.upstream }}
+        INPUT_BASE_BRANCH: ${{ inputs.base-branch }}
+      run: python "$ACTION_PATH/scripts/run.py" action
+
+    - name: Summarise
+      shell: bash
+      env:
+        PYTHONPATH: ${{ github.action_path }}
+        ACTION_PATH: ${{ github.action_path }}
+        REPORT_JSON: ${{ steps.submit.outputs.report }}
+      run: python "$ACTION_PATH/scripts/run.py" summary

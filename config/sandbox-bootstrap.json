@@ -1,0 +1,12 @@
+{
+  "tool": "pixi-sandbox",
+  "version": "0.9.0",
+  "channel": "https://prefix.dev/archont561/archont561",
+  "config": "pixi-sandbox.toml",
+  "generated": [
+    "restore.sh",
+    ".github/workflows/publish-sandbox.yml",
+    ".github/workflows/relock.yml"
+  ],
+  "notes": "Pin recorded here is cross-checked against pixi.toml's offline feature by pixi run validate."
+}

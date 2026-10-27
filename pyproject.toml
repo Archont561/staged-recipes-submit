@@ -1,0 +1,90 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "staged-recipes-submit"
+version = "0.1.0"
+description = "Validate conda recipes and open a pull request against conda-forge/staged-recipes."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Archont561" }]
+keywords = ["conda", "conda-forge", "staged-recipes", "github-action", "packaging"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Build Tools",
+]
+dependencies = ["pyyaml>=6.0.2"]
+
+[project.optional-dependencies]
+dev = [
+  "hypothesis>=6.120",
+  "mypy>=1.14",
+  "pytest>=8.3",
+  "pytest-bdd>=8.1",
+  "pytest-cov>=6.1",
+  "ruff>=0.13",
+  "types-pyyaml>=6.0.12",
+]
+live = ["pytest>=8.3"]
+
+[project.scripts]
+staged-recipes-submit = "staged_recipes_submit.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["staged_recipes_submit"]
+
+[tool.pytest.ini_options]
+minversion = "8.3"
+testpaths = ["tests"]
+pythonpath = [".", "tests", "scripts"]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+  "live: talks to the real GitHub API; enable with --run-live and GITHUB_TOKEN",
+]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+branch = true
+source = ["staged_recipes_submit"]
+omit = ["*/__main__.py"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "if __name__ == .__main__.:",
+  "@overload",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["."]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "PT", "RUF"]
+ignore = ["E501", "RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["staged_recipes_submit", "support"]
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["staged_recipes_submit"]
+mypy_path = "."

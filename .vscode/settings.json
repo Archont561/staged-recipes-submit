@@ -1,0 +1,29 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.pixi/envs/default/bin/python",
+  "python.analysis.extraPaths": ["${workspaceFolder}/src", "${workspaceFolder}/tests"],
+  "python.analysis.typeCheckingMode": "strict",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["tests"],
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    },
+    "editor.tabSize": 4
+  },
+  "[yaml]": { "editor.formatOnSave": true, "editor.tabSize": 2 },
+  "[toml]": { "editor.formatOnSave": true, "editor.tabSize": 4 },
+  "[gherkin]": { "editor.insertSpaces": true, "editor.tabSize": 2 },
+  "files.exclude": {
+    "**/.pixi": true,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.hypothesis": true,
+    "**/.ruff_cache": true,
+    "**/.mypy_cache": true
+  },
+  "search.exclude": { "**/.pixi": true, "**/coverage.xml": true, "**/.staged-recipes": true },
+  "cSpell.words": ["conda", "codecov", "hypothesis", "lefthook", "pixi", "pyproject", "rattler"]
+}
