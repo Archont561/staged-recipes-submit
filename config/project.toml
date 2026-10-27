@@ -1,0 +1,29 @@
+[project]
+name = "staged-recipes-submit"
+repository = "Archont561/staged-recipes-submit"
+version = "0.1.0"
+package = "staged_recipes_submit"
+
+[publish]
+# Nothing is published. The action runs the scripts in this repository directly, so a git tag
+# (plus the moving v1 tag) is the whole release: no registry, no assets, no wheel to verify.
+pypi = false
+release = false
+action = true
+
+[runtime]
+# The one third-party import the action needs. Pinned exactly in action.yml and required with a
+# lower bound in pyproject.toml; `pixi run validate` keeps the two in agreement.
+pyyaml = "6.0.2"
+
+[action]
+# The marketplace tag the composite action advertises.
+major_tag = "v1"
+
+[upstream]
+repository = "conda-forge/staged-recipes"
+base_branch = "main"
+
+[limits]
+max_file_bytes = 5242880
+max_recipe_bytes = 10485760

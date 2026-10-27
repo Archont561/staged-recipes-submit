@@ -1,0 +1,16 @@
+header: |
+  # Changelog
+
+scopeRegex: '^(action|cli|discovery|validation|duplicates|plan|git|github|ci|deps|docs|tests|release)$'
+types:
+  - {type: feat, section: Features, hidden: false}
+  - {type: fix, section: Fixes, hidden: false}
+  - {type: perf, section: Performance, hidden: false}
+  - {type: docs, section: Documentation, hidden: false}
+  - {type: revert, section: Reverts, hidden: false}
+  - {type: refactor, section: Internal, hidden: true}
+  - {type: test, section: Internal, hidden: true}
+  - {type: build, section: Internal, hidden: true}
+  - {type: ci, section: Internal, hidden: true}
+  - {type: chore, section: Internal, hidden: true}
+  - {type: style, section: Internal, hidden: true}

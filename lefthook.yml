@@ -1,0 +1,21 @@
+min_version: 2.2.2
+
+commit-msg:
+  commands:
+    conventional-commit:
+      run: pixi run --locked hook-commit-msg "{1}"
+
+pre-commit:
+  parallel: false
+  commands:
+    python:
+      run: pixi run --locked hook-pre-commit
+      # Python reads the Git index directly: no shell-expanded filename list,
+      # no blanket `git add`, and no edits to files outside the commit.
+
+pre-push:
+  parallel: false
+  commands:
+    tests:
+      run: pixi run --locked hook-pre-push
+      use_stdin: true

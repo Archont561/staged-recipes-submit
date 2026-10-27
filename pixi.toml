@@ -1,0 +1,71 @@
+[workspace]
+name = "staged-recipes-submit"
+version = "0.1.0"
+description = "Locked Python, linting and Git-hook workspace for the staged-recipes submit action"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+requires-pixi = ">=0.83.0"
+
+# One feature per supported interpreter. Each environment gets its own solve so a
+# failure on 3.11 cannot mask a problem on 3.13.
+[feature.py311.dependencies]
+python = "3.11.*"
+
+[feature.py312.dependencies]
+python = "3.12.*"
+
+[feature.py313.dependencies]
+python = "3.13.*"
+
+[feature.dev.dependencies]
+pytest = "8.*"
+pytest-cov = "6.*"
+pytest-bdd = "8.*"
+hypothesis = "6.*"
+pyyaml = "6.*"
+ruff = "0.13.*"
+mypy = "1.*"
+types-pyyaml = "*"
+
+[feature.utils.dependencies]
+git = "*"
+gh = "*"
+lefthook = "2.2.*"
+actionlint = "1.7.*"
+
+# The offline transport is a separate feature so a plain `pixi install` never
+# depends on the sandbox channel.
+[feature.offline]
+channels = ["conda-forge", "https://prefix.dev/archont561/archont561"]
+
+[feature.offline.dependencies]
+pixi-sandbox = { version = "==0.9.0", channel = "https://prefix.dev/archont561/archont561" }
+
+# Python is the only automation implementation. Extra arguments are forwarded to
+# the dispatcher, e.g. `pixi run test -k discovery`.
+[tasks]
+scripts = "python scripts/run.py"
+setup = "python scripts/run.py setup"
+check-tools = "python scripts/run.py check-tools"
+hooks-install = "python scripts/run.py hooks-install"
+hook-commit-msg = "python scripts/run.py hook-commit-msg"
+hook-pre-commit = "python scripts/run.py hook-pre-commit"
+hook-pre-push = "python scripts/run.py hook-pre-push"
+commit-check = "python scripts/run.py commit-check"
+fmt = "python scripts/run.py fmt"
+fmt-check = "python scripts/run.py fmt-check"
+lint = "python scripts/run.py lint"
+type-check = "python scripts/run.py type-check"
+test = "python scripts/run.py test"
+coverage = "python scripts/run.py coverage"
+validate = "python scripts/run.py validate"
+ci = "python scripts/run.py ci"
+submit = "python scripts/run.py submit"
+sandbox = "python scripts/run.py sandbox"
+
+[environments]
+default = { features = ["py313", "dev", "utils"], solve-group = "default" }
+py311 = { features = ["py311", "dev", "utils"], solve-group = "py311" }
+py312 = { features = ["py312", "dev", "utils"], solve-group = "py312" }
+py313 = { features = ["py313", "dev", "utils"], solve-group = "py313" }
+offline = { features = ["py313", "dev", "utils", "offline"], solve-group = "offline" }

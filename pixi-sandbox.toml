@@ -1,0 +1,59 @@
+# Offline developer transport.
+#
+# `pixi-sandbox` packs the locked Pixi environments on a connected machine, publishes them to
+# orphan branches, and restores them on an airlocked host without contacting a registry. This
+# file is the reviewed plan for that transport: which environments travel, on which platforms,
+# under which runners, and within which size budgets.
+#
+# `pixi-sandbox init` generates this file together with `restore.sh`,
+# `.github/workflows/publish-sandbox.yml` and `.github/workflows/relock.yml`. When you change
+# the plan, regenerate rather than editing around the generator, and let `pixi run validate`
+# (scripts/quality.py::check_sandbox_config) confirm the invariants below.
+
+schema = 2
+branch_prefix = "sandbox"
+
+# This repository has no Cargo.lock. pixi-sandbox defaults `cargo_vendor` to true, which would
+# make `pack` look for a crate tree that does not exist, so it is disabled explicitly here and
+# per bundle. Revisit this line only if a Rust component joins the workspace.
+cargo_vendor = false
+
+[[bundle]]
+name = "dev"
+environments = ["default"]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+cargo_vendor = false
+
+# Explicit runners. The built-in defaults (ubuntu-latest, macos-14, windows-latest) drift with
+# GitHub's images; these labels are the ones the rest of CI already uses.
+[runners]
+linux-64 = "ubuntu-24.04"
+osx-arm64 = "macos-15"
+win-64 = "windows-2025"
+
+# Pre-publish `doctor` gate. `max_blob_mib` stays at the 95 MiB Git limit: split a pack instead
+# of raising it. The rest are generous for a Python environment with the full dev toolchain and
+# fail closed if a future dependency doubles the payload.
+[budgets]
+max_blob_mib = 95
+max_transport_mib = 1500
+max_repository_push_mib = 1500
+max_restore_required_mib = 6144
+
+# Consumer-owned policy for the generated publisher.
+[workflow]
+# Top-level `contents: read`, `contents: write` only on the publish job.
+permissions = true
+# The same Pixi as every other workflow, so a restore cannot land on a different solve.
+pixi_version = "v0.83.0"
+# A cache keyed on the consumer manifest can restore a solve the publisher's own
+# `pixi install --locked` will not reuse (pixi-sandbox ADR-18). Keep it off.
+setup_pixi_cache = false
+
+[workflow.concurrency]
+group = "sandbox-${{ github.ref }}"
+cancel_in_progress = false
+
+[workflow.timeouts]
+plan = 10
+publish = 60
