@@ -36,6 +36,8 @@ COMMANDS = {
     "validate": ("quality", "validate"),
     "ci": ("quality", "ci"),
     "sandbox": ("sandbox", "sandbox"),
+    "release-plan": ("release", "release_plan"),
+    "release-publish": ("release", "release_publish"),
 }
 
 

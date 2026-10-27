@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v[0-9]*']
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Plan and run release gates without pushing tags or creating a GitHub Release.
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify release
+    runs-on: ubuntu-24.04
+    outputs:
+      should_release: ${{ steps.plan.outputs.should_release }}
+      version: ${{ steps.plan.outputs.version }}
+      tag: ${{ steps.plan.outputs.tag }}
+      major_tag: ${{ steps.plan.outputs.major_tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94 # v0.11.2
+        with:
+          pixi-version: v0.83.0
+          environments: default
+          locked: true
+          cache: true
+      - name: Plan release
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          HEAD_SHA: ${{ github.sha }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run && 'true' || 'false' }}
+        run: pixi run --locked release-plan
+      - name: Run quality and coverage gates
+        if: steps.plan.outputs.should_release == 'true' || (github.event_name == 'workflow_dispatch' && inputs.dry-run)
+        run: pixi run --locked ci
+
+  publish:
+    name: Tag and publish release
+    needs: verify
+    if: >-
+      needs.verify.outputs.should_release == 'true' &&
+      github.repository == 'Archont561/staged-recipes-submit' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94 # v0.11.2
+        with:
+          pixi-version: v0.83.0
+          environments: default
+          locked: true
+          cache: true
+      - name: Create tags and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.verify.outputs.tag }}
+          MAJOR_TAG: ${{ needs.verify.outputs.major_tag }}
+          TARGET_SHA: ${{ github.sha }}
+        run: pixi run --locked release-publish

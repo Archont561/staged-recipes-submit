@@ -28,7 +28,7 @@ REQUIRED_FILES = (
     "README.md",
     "LICENSE",
 )
-REQUIRED_WORKFLOWS = {"ci.yml"}
+REQUIRED_WORKFLOWS = {"ci.yml", "release.yml"}
 PACKAGE = "staged_recipes_submit"
 # Written by `pixi-sandbox init`, not by hand. They are allowed to exist, but they must satisfy
 # the sandbox policy below as soon as they do.
@@ -71,6 +71,8 @@ def validate(_args):
         else:
             failures += _check_run_steps(document, name)
             failures += _check_permissions(document, name)
+            if name == "release.yml":
+                failures += _check_release_workflow(document)
         failures += _check_uses(document, pins, name)
     failures += _check_uses(load_yaml(ROOT / "action.yml"), pins, "action.yml")
     failures += _check_lefthook()
@@ -182,6 +184,38 @@ def _check_permissions(document, name):
     if document.get("permissions") != {"contents": "read"}:
         return [f"{name}: the workflow must default to contents: read"]
     return []
+
+
+def _check_release_workflow(document):
+    """The release workflow cuts tags and a GitHub Release only: no wheel, no assets."""
+    failures = []
+    repository = read_toml(ROOT / "config/project.toml")["project"]["repository"]
+    jobs = document.get("jobs", {})
+    commands = set()
+    forbidden = ("pip ", "twine", "hatch", "upload-artifact", "gh release upload")
+    for job_name, job in jobs.items():
+        permissions = job.get("permissions") or {}
+        if permissions.get("contents") == "write":
+            guard = str(job.get("if", "")).strip()
+            if repository not in guard or "refs/heads/main" not in guard:
+                failures.append(
+                    f"release.yml/{job_name}: contents: write job must guard on {repository!r} "
+                    "and refs/heads/main"
+                )
+        for step in job.get("steps", []):
+            raw = " ".join(str(step.get(field, "")) for field in ("uses", "run") if field in step)
+            for token in forbidden:
+                if token in raw:
+                    failures.append(
+                        f"release.yml/{job_name}: forbidden build/asset operation {token!r}"
+                    )
+            run_line = step.get("run", "").strip()
+            if run_line.startswith("pixi run "):
+                commands.add(run_line.split()[-1])
+    for required in ("release-plan", "release-publish"):
+        if required not in commands:
+            failures.append(f"release.yml must invoke 'pixi run --locked {required}'")
+    return failures
 
 
 def _check_lefthook():
