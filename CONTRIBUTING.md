@@ -92,16 +92,17 @@ config/                        project identity and the pinned-action lock file
 
 ## Releases
 
-A git tag is the whole release: nothing is built and nothing is published.
+A git tag (plus an assetless GitHub Release) is the whole release: nothing is built and no wheel or
+package is published.
 
-```bash
-pixi run ci
-git tag v0.2.0 && git push origin v0.2.0
-```
+`.github/workflows/release.yml` automates tagging on `main`: whenever the version declared across
+`pyproject.toml`, `pixi.toml`, `config/project.toml` and `staged_recipes_submit/_version.py` does
+not yet have a `v<version>` tag on GitHub, the workflow runs `pixi run --locked ci`, pushes the
+immutable `v<version>` tag, moves the `v1` major tag (for stable versions), and creates the GitHub
+Release with generated notes.
 
-Consumers pin `@v0.2.0` (or a commit SHA for immutability). If you keep a moving `v1` tag, move it
-with `git tag -f v1 v0.2.0 && git push -f origin v1`. `pixi run validate` requires the version to
-agree across `pyproject.toml`, `pixi.toml`, `config/project.toml` and `__init__.py`.
+To cut a new release, bump the version across all four files (`pixi run validate` enforces parity),
+merge to `main`, or trigger **Release** manually (`workflow_dispatch`, with optional `dry-run`).
 
 ## Reports and issues
 

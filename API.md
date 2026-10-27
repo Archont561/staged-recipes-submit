@@ -384,6 +384,7 @@ staged-recipes-submit -r recipes/cool-lib -r recipes/cool-cli \
 | `setup`, `check-tools`, `hooks-install` | workspace bootstrap | `pixi run setup` |
 | `hook-commit-msg`, `hook-pre-commit`, `hook-pre-push`, `commit-check` | git hooks | lefthook |
 | `sandbox` | pixi-sandbox plan/publish | the offline workflow |
+| `release-plan`, `release-publish` | tag-only release planning and tag/GitHub Release creation | `.github/workflows/release.yml` |
 
 `python scripts/run.py --help` lists them; an unknown command exits 2.
 

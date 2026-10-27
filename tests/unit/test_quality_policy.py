@@ -112,9 +112,22 @@ def test_a_drifting_runtime_pin_is_refused(action) -> None:
     assert "pyyaml==6.0.2" in errors[0]
 
 
-def test_the_workflow_set_is_ci_only() -> None:
-    assert {"ci.yml"} == quality.REQUIRED_WORKFLOWS
-    assert not (ROOT / ".github/workflows/release.yml").exists()
+def test_the_workflow_set_is_ci_and_tag_release() -> None:
+    assert {"ci.yml", "release.yml"} == quality.REQUIRED_WORKFLOWS
+    release_doc = load_yaml(ROOT / ".github/workflows/release.yml")
+    assert quality._check_release_workflow(release_doc) == []
+
+
+def test_release_workflow_rejects_unguarded_writes_and_asset_uploads() -> None:
+    release_doc = load_yaml(ROOT / ".github/workflows/release.yml")
+    mutated = copy.deepcopy(release_doc)
+    mutated["jobs"]["publish"].pop("if")
+    mutated["jobs"]["publish"]["steps"].append(
+        {"name": "Upload wheel", "run": "pixi run --locked gh release upload"}
+    )
+    errors = quality._check_release_workflow(mutated)
+    assert any("contents: write job must guard" in error for error in errors)
+    assert any("forbidden build/asset operation" in error for error in errors)
 
 
 def test_there_is_no_src_layout() -> None:
@@ -128,11 +141,10 @@ def test_the_package_is_importable_from_the_repository_root() -> None:
     assert Path(staged_recipes_submit.__file__).parent.parent == ROOT
 
 
-def test_no_bootstrap_or_release_scripts_remain() -> None:
+def test_no_bootstrap_script_remains_and_release_stays_tag_only() -> None:
     scripts = {path.name for path in (ROOT / "scripts").glob("*.py")}
     assert "bootstrap_action.py" not in scripts
-    assert "release.py" not in scripts
-    assert {"run.py", "action.py", "quality.py", "hooks.py"} <= scripts
+    assert {"run.py", "action.py", "quality.py", "hooks.py", "release.py"} <= scripts
 
 
 def test_the_token_mapping_is_part_of_the_contract(action) -> None:

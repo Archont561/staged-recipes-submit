@@ -62,6 +62,8 @@ validate = "python scripts/run.py validate"
 ci = "python scripts/run.py ci"
 submit = "python scripts/run.py submit"
 sandbox = "python scripts/run.py sandbox"
+release-plan = "python scripts/run.py release-plan"
+release-publish = "python scripts/run.py release-publish"
 
 [environments]
 default = { features = ["py313", "dev", "utils"], solve-group = "default" }

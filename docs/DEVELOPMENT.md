@@ -29,7 +29,7 @@ pixi run ci        # what CI runs, on your machine
 
 | Task | Proves |
 | --- | --- |
-| `validate` | layout, versions, one-workflow policy, every `uses:` pinned to a 40-hex SHA in `config/actions.lock.json`, every `run:` a single Pixi task, coverage gate ≥ 90 |
+| `validate` | layout, versions, workflow policy (`ci.yml` + tag-only `release.yml`), every `uses:` pinned to a 40-hex SHA in `config/actions.lock.json`, every `run:` a single Pixi task, coverage gate ≥ 90 |
 | `lint` / `fmt-check` | ruff correctness and formatting |
 | `type-check` | mypy strict over the package |
 | `test` | unit, property, BDD and integration tests; live GitHub tests skipped |
@@ -165,17 +165,18 @@ Nothing is published. Three surfaces run the same code:
 
 ### Releasing
 
-A tag *is* the release — there is no build, no artifact and no registry:
+A tag *is* the release — there is no build, no wheel and no package registry. `.github/workflows/release.yml`
+automates cutting releases from `main` via `scripts/release.py` (`release-plan` and `release-publish`):
 
-```bash
-pixi run ci
-git tag v0.2.0 && git push origin v0.2.0      # consumers may pin v0.2.0 or the commit SHA
-git tag -f v1 v0.2.0 && git push -f origin v1 # moving major tag, if you keep one
-```
+1. Bump the version identically in `pyproject.toml`, `pixi.toml` (refreshing `pixi.lock` if needed),
+   `config/project.toml` and `staged_recipes_submit/_version.py`, and merge the PR into `main`.
+2. On `main`, `release.yml` runs `pixi run --locked release-plan` + `pixi run --locked ci`, then
+   pushes `v<version>`, advances the moving `v1` tag (for stable versions), and creates an assetless
+   GitHub Release with generated notes. You can also preview via `workflow_dispatch` (`dry-run: true`).
 
-`pixi run validate` keeps the version identical in `pyproject.toml`, `pixi.toml`,
-`config/project.toml` and `__init__.py`, and refuses an `action.yml` that stops calling the
-dispatcher or that starts installing the checkout.
+`pixi run validate` keeps the version identical across all four files, enforces least-privilege
+guards on `release.yml`, and refuses any wheel/asset upload or an `action.yml` that stops calling the
+dispatcher.
 
 ### Development install (optional)
 

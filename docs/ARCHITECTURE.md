@@ -61,7 +61,7 @@ is testable without a GitHub token.
 | The offline plan matches the workspace | `quality.check_sandbox_config`, `quality._check_sandbox_pin`, `tests/unit/test_sandbox_config.py` |
 | A missing secret is a loud, specific failure | `credentials.missing_token_error` (action wording vs CLI wording), `credentials.warnings` (token family checks), `::error::`/`::warning::` annotations |
 | The action runs this repository's code, nothing else | `quality._check_action_contract`: dispatcher-only steps, `PYTHONPATH` = action checkout, no checkout install, no distribution inputs, pinned `pyyaml` |
-| Nothing is published | `config/project.toml` (`publish.pypi = false`, `publish.release = false`), no release workflow |
+| Nothing is published | `config/project.toml` (`publish.pypi = false`, `publish.release = false`, `publish.action = true`); `release.yml` cuts tags and an assetless GitHub Release only (`quality._check_release_workflow`) |
 
 ## Idempotency
 
